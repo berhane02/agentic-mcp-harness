@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agent-harness chat</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfaf9;
+    --panel: #ffffff;
+    --ink: #1d1b19;
+    --muted: #6b6560;
+    --line: #e4e0db;
+    --accent: #bd5d3a;
+    --accent-soft: #f6ece7;
+    --user-bg: #1d1b19;
+    --user-ink: #fbfaf9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171614;
+      --panel: #201e1c;
+      --ink: #eeebe7;
+      --muted: #9a938c;
+      --line: #322e2b;
+      --accent: #e08a63;
+      --accent-soft: #2b2320;
+      --user-bg: #eeebe7;
+      --user-ink: #171614;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.on { background: #3f9f57; }
+  .dot.off { background: #c4553d; }
+  header .status { font-size: 12.5px; color: var(--muted); }
+  header button {
+    margin-left: auto; font: inherit; font-size: 13px; color: var(--muted);
+    background: none; border: 1px solid var(--line); border-radius: 7px;
+    padding: 5px 11px; cursor: pointer;
+  }
+  header button:hover { color: var(--ink); border-color: var(--muted); }
+  main { flex: 1; overflow-y: auto; }
+  .thread { max-width: 760px; margin: 0 auto; padding: 24px 16px 8px; }
+  .msg { margin-bottom: 20px; display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    padding: 10px 14px; border-radius: 14px; max-width: 88%;
+    white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere;
+  }
+  .msg.user .bubble { background: var(--user-bg); color: var(--user-ink); border-bottom-right-radius: 4px; }
+  .msg.bot .bubble { background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .tool {
+    font-family: var(--mono); font-size: 12.5px; background: var(--accent-soft);
+    border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 8px 11px; margin: 0 0 10px; color: var(--muted);
+    max-width: 88%; overflow-x: auto;
+  }
+  .tool b { color: var(--accent); font-weight: 600; }
+  .tool pre { margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; }
+  .thinking { font-style: italic; color: var(--muted); font-size: 13.5px; margin-bottom: 10px; max-width: 88%; }
+  .err { color: #c4553d; border-color: #c4553d; }
+  .cursor::after {
+    content: "▍"; color: var(--accent);
+    animation: blink 1s steps(2, start) infinite;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+  footer { border-top: 1px solid var(--line); background: var(--panel); padding: 12px 16px; }
+  form { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; }
+  textarea {
+    flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    max-height: 180px; min-height: 42px;
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button.send {
+    font: inherit; font-weight: 500; background: var(--accent); color: #fff;
+    border: 0; border-radius: 10px; padding: 11px 18px; cursor: pointer;
+  }
+  button.send:disabled { opacity: 0.5; cursor: default; }
+  .hint { max-width: 760px; margin: 8px auto 0; font-size: 12px; color: var(--muted); }
+  .hint button {
+    font: inherit; font-size: 12px; background: none; border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 10px; margin-right: 6px; color: var(--muted); cursor: pointer;
+  }
+  .hint button:hover { color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="dot"></span>
+  <h1>agent-harness</h1>
+  <span class="status" id="status">connecting…</span>
+  <button id="reset">New chat</button>
+</header>
+
+<main><div class="thread" id="thread"></div></main>
+
+<footer>
+  <form id="form">
+    <textarea id="input" rows="1" placeholder="Ask about markets, news, or a sector…" autofocus></textarea>
+    <button class="send" id="send" type="submit">Send</button>
+  </form>
+  <div class="hint" id="hint">
+    <button data-q="What are the biggest tech movers today?">tech movers</button>
+    <button data-q="How are energy stocks doing today?">energy movers</button>
+    <button data-q="What's the latest financial news on the Federal Reserve?">Fed news</button>
+  </div>
+</footer>
+
+<script>
+const thread = document.getElementById("thread");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+const statusEl = document.getElementById("status");
+const dot = document.getElementById("dot");
+let conversationId = crypto.randomUUID();
+let busy = false;
+
+const scroll = () => { document.querySelector("main").scrollTop = 1e9; };
+
+function bubble(role, text = "") {
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${role}`;
+  const b = document.createElement("div");
+  b.className = "bubble";
+  b.textContent = text;
+  wrap.appendChild(b);
+  thread.appendChild(wrap);
+  scroll();
+  return b;
+}
+
+function note(cls, html) {
+  const el = document.createElement("div");
+  el.className = cls;
+  el.innerHTML = html;
+  thread.appendChild(el);
+  scroll();
+  return el;
+}
+
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+async function ask(message) {
+  if (busy || !message.trim()) return;
+  busy = true;
+  send.disabled = true;
+  bubble("user", message);
+  input.value = "";
+  input.style.height = "auto";
+
+  let current = null;
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, conversation_id: conversationId }),
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const frames = buffer.split("\n\n");
+      buffer = frames.pop();
+
+      for (const frame of frames) {
+        if (!frame.startsWith("data: ")) continue;
+        const e = JSON.parse(frame.slice(6));
+
+        if (e.event === "tools") {
+          statusEl.textContent = `${e.names.length} tools: ${e.names.join(", ")}`;
+          dot.className = "dot on";
+        } else if (e.event === "thinking") {
+          note("thinking", esc(e.text));
+        } else if (e.event === "tool_call") {
+          note("tool", `<b>→ ${esc(e.name)}</b>(${esc(JSON.stringify(e.arguments))})`);
+        } else if (e.event === "tool_result") {
+          note("tool" + (e.ok ? "" : " err"), `<b>← ${esc(e.name)}</b><pre>${esc(e.preview)}</pre>`);
+        } else if (e.event === "text") {
+          if (!current) { current = bubble("bot"); current.classList.add("cursor"); }
+          current.textContent += e.text;
+          scroll();
+        } else if (e.event === "error") {
+          note("tool err", esc(e.message));
+          dot.className = "dot off";
+        }
+      }
+    }
+  } catch (err) {
+    note("tool err", esc(`Connection failed: ${err.message}`));
+    dot.className = "dot off";
+  } finally {
+    if (current) current.classList.remove("cursor");
+    busy = false;
+    send.disabled = false;
+    input.focus();
+  }
+}
+
+form.addEventListener("submit", (e) => { e.preventDefault(); ask(input.value); });
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+});
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 180) + "px";
+});
+document.getElementById("hint").addEventListener("click", (e) => {
+  if (e.target.dataset.q) ask(e.target.dataset.q);
+});
+document.getElementById("reset").addEventListener("click", async () => {
+  await fetch("/api/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ conversation_id: conversationId }),
+  });
+  conversationId = crypto.randomUUID();
+  thread.innerHTML = "";
+  input.focus();
+});
+
+statusEl.textContent = "ready — tools load on first message";
+</script>
+</body>
+</html>
