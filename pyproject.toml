@@ -5,11 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "anthropic>=1.6.0",
     "mcp[cli]>=2.2.0",
 ]
 
 [project.scripts]
 agent-harness = "agent_harness:main"
+agent-harness-chat = "agent_harness.chat:main"
 
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13.0"]
