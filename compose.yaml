@@ -1,0 +1,28 @@
+services:
+  agent-harness:
+    build: .
+    image: agent-harness:local
+    ports:
+      - "8000:8000"
+    environment:
+      MCP_TRANSPORT: streamable-http
+      HOST: 0.0.0.0
+      PORT: 8000
+    restart: unless-stopped
+
+  chat:
+    build: .
+    image: agent-harness:local
+    command: ["agent-harness-chat"]
+    ports:
+      - "8080:8080"
+    environment:
+      # Reach the MCP server by service name on the compose network.
+      MCP_SERVER_URL: http://agent-harness:8000/mcp
+      CHAT_HOST: 0.0.0.0
+      CHAT_PORT: 8080
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY in your environment or a .env file}
+    depends_on:
+      agent-harness:
+        condition: service_healthy
+    restart: unless-stopped

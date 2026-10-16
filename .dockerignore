@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+**/__pycache__
+**/*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.env
+Dockerfile
+compose.yaml
+.dockerignore
