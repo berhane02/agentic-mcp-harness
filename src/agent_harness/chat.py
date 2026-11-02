@@ -30,7 +30,9 @@ MAX_TOKENS = int(os.environ.get("ANTHROPIC_MAX_TOKENS", "8000"))
 INDEX_HTML = Path(__file__).parent / "static" / "index.html"
 
 SYSTEM_PROMPT = """You are a financial research assistant with access to live market tools \
-over MCP: news headlines and today's biggest movers among major US tech and energy stocks.
+over MCP: news headlines, live quotes for any ticker, a cross-asset market overview (indices, \
+VIX, yields, commodities, FX, crypto), sector performance, price history, and today's biggest \
+movers among major US tech and energy stocks.
 
 Use the tools whenever the user asks about markets, news, or specific stocks - the data is \
 live, so never answer from memory. Quote concrete numbers you got back. Keep answers brief \
