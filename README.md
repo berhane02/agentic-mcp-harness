@@ -4,6 +4,13 @@ An MCP server exposing a few financial tools:
 
 - `get_financial_news` — latest headlines from Google News' Business feed, or a topic search.
 - `get_market_movers` — today's biggest gainers and losers among major US `tech` or `energy` stocks.
+- `get_quotes` — live quotes for up to 20 tickers (stocks, ETFs, indices, futures, FX, crypto):
+  price, change, day and 52-week range, volume, and market state (open/pre-market/after-hours/closed).
+- `get_market_overview` — a cross-asset snapshot: major US indices, VIX, 5/10/30-year Treasury
+  yields, oil, gold, silver, natural gas, the dollar index, EUR/USD, USD/JPY, Bitcoin, Ether.
+- `get_sector_performance` — the 11 S&P 500 sectors ranked by today's move (SPDR sector ETFs).
+- `get_price_history` — OHLCV bars for one ticker over `1d`…`5y`, with the bar size scaled to
+  the period (5-minute intraday for `1d`), plus a high/low/change summary.
 - `add` — trivial demo tool.
 
 Both data sources are keyless public endpoints (Google News RSS, Yahoo Finance), so there is
